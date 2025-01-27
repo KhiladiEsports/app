@@ -1,0 +1,157 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="loader.css">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Lexend+Giga:wght@100..900&display=swap');
+    body { margin: 0; }
+    * { overflow-x: hidden; }
+    h1, h2, h3, h4, h5, h6, p { margin: 0; }
+    body { padding: 0; margin: 0; background: #031d38; color: #fff; font-family: 'Poppins', sans-serif; }
+    .header { display: flex; align-items: center; padding: 10px; background: #031d38; color: #fff; box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px; }
+    .header h2 { margin: 0px 0px 0px 10px; font-family: "Lexend Giga", serif; color: #e7e7e7; font-weight: 300; }
+    .header img { border-radius: 125px; width: 40px; }
+    .tournament-grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; justify-content: center; }
+    .tournament-card { background-color: #0b0338; border: 2px solid #444; border-radius: 25px; overflow: hidden; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: transform 0.3s; }
+    .tournament-card:hover { transform: translateY(-5px); }
+    .tournament-card img { width: 100%; height: 150px; object-fit: cover; }
+    .tournament-card .details { padding: 15px; }
+    .tournament-card h2 { font-size: 16px; }
+    .details-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .details-grid div { background-color: #66118a94; padding: 10px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); }
+    .details-grid div p { margin: 0; font-size: 14px; color: #90caf9; }
+    .details-grid div span { display: block; margin-top: 5px; font-size: 14px; color: #fff; }
+    .join-btn { display: block; width: calc(100% - 30px); margin: 10px auto; padding: 10px 0; background-color: #8f1b94 ; border: none;
+        border-radius: 25px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; transition: background-color 0.3s; }
+    .join-btn:disabled { background-color: #555; cursor: not-allowed; }
+    .join-btn:hover:not(:disabled) { background-color: #2c6fe5; }
+    #loader { align-items: center; justify-content: center; height: 80vh; }
+</style>
+<div class="header">
+    <img src="https://i.ibb.co/GvBFqcF/icon.jpg" class="image">
+    <h2>Khiladi Esports</h2>
+</div>
+<div class="tournament-grid" id="tournamentContainer"></div>
+<div id="loader" style="display: none;">
+    <div class="loader"></div>
+</div>
+<script>
+    const DEPLOY_CODE = 'AKfycbz-_K0XfRRx91-ava5b7RfGV8dwnQyG366rpE2uRUdr02e_iNwRPU4gGdkPVBp8k4IR';
+
+    async function fetchTournaments() {
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            const response = await fetch(`https://script.google.com/macros/s/${DEPLOY_CODE}/exec`, {
+                method: 'GET'
+            });
+            const data = await response.json();
+            displayTournaments(data);
+        } catch (error) {
+            console.error('Error fetching tournaments:', error);
+        } finally {
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    function displayTournaments(tournaments) {
+        const container = document.getElementById('tournamentContainer');
+        container.innerHTML = '';
+        tournaments.forEach(tournament => {
+            const card = createTournamentCard(tournament);
+            container.appendChild(card);
+            if (localStorage.getItem(`joined-${tournament.title}`)) {
+                const joinButton = document.getElementById(`joinBtn-${tournament.title}`);
+                joinButton.disabled = true;
+                joinButton.textContent = 'Joined';
+            }
+        });
+    }
+
+    function createTournamentCard(tournament) {
+        const card = document.createElement('div');
+        card.className = 'tournament-card';
+        card.innerHTML = `
+            <img src="${tournament.image}" alt="${tournament.title}">
+            <div class="details">
+            <h2>${tournament.title}</h2>
+            <div class="details-grid">
+            <div>
+            <p><b class="div-b">Fee 👑</b></p>
+            <span>${tournament.price}</span>
+            </div>
+            <div>
+            <p><b class="div-b">Mode 🗺️</b></p>
+            <span>${tournament.mode}</span>
+            </div>
+            <div>
+            <p><b class="div-b">Prize 💸</b></p>
+            <span>${tournament.prize}</span>
+            </div>
+            <div>
+            <p><b class="div-b">Time ⏰</b></p>
+            <span>${tournament.time}</span>
+            </div>
+            <div>
+            <p><b class="div-b">Slot 🧑</b></p>
+            <span>${tournament.slot}</span>
+            </div>
+            <div>
+            <p><b class="div-b">Mode 🎮</b></p>
+            <span>Solo</span>
+            </div>
+            </div>
+            </div>
+            <button class="join-btn" id="joinBtn-${tournament.title}" onclick="handleJoin('${tournament.title}', ${tournament.slot}, '${tournament.price}', '${tournament.image}', this)" ${tournament.slot <= 0 ? 'disabled' : ''}>
+                ${tournament.slot <= 0 ? 'No Slots' : 'Join'}
+            </button>
+        `;
+        return card;
+    }
+
+    async function handleJoin(tournamentTitle, slots, price, image, button) {
+        if (slots <= 0) {
+            alert('Sorry, no slots available!');
+            return;
+        }
+        const confirmed = confirm('Do you want to join this tournament?');
+        if (!confirmed) return;
+
+        const username = localStorage.getItem('khiladi_local');
+        if (!username) {
+            alert('Please log in first!');
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://script.google.com/macros/s/${DEPLOY_CODE}/exec`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'join',
+                    username: username,
+                    tournament: tournamentTitle,
+                    price: price
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('Registration successful! Details have been sent to your email.');
+                button.disabled = true;
+                button.textContent = 'Joined';
+                localStorage.setItem(`joined-${tournamentTitle}`, JSON.stringify({
+                    imageUrl: image
+                }));
+                const slotsText = button.previousElementSibling.querySelector('p');
+                const newSlotText = slotsText.textContent.replace(/\d+/, (parseInt(slotsText.textContent.match(/\d+/)[0]) - 1).toString());
+                slotsText.textContent = newSlotText;
+            } else {
+                alert(result.message || 'Registration failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error during registration:', error);
+            alert('An error occurred during registration. Please try again.');
+        }
+    }
+
+    fetchTournaments();
+</script>
